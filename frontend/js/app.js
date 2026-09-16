@@ -333,7 +333,14 @@ async function deleteStudent(id) {
             'Accept': 'application/json'
         }
     });
-    const json = await response.json();
+    let json = {};
+    if (response.status !== 204) {
+        try {
+            json = await response.json();
+        } catch (e) {
+            json = {};
+        }
+    }
     return { ok: response.ok, status: response.status, data: json };
 }
 

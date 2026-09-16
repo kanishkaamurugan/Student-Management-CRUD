@@ -139,7 +139,17 @@ class StudentViewSet(viewsets.ModelViewSet):
         Updates all fields of an existing student.
         """
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        try:
+            instance = self.get_object()
+        except Exception:
+            return Response(
+                {
+                    "success": False,
+                    "message": f"Student with ID {kwargs.get('pk')} not found."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         if serializer.is_valid():
             self.perform_update(serializer)
