@@ -1,0 +1,596 @@
+{
+	"info": {
+		"_postman_id": "9f7b1e84-482a-4ce2-b2fa-e1df595b1123",
+		"name": "Student Management System API - Complete CRUD Collection",
+		"description": "Comprehensive Postman test collection for testing all REST API endpoints of the Student Management System college project.\n\nCovers:\n1. Create Student (Valid Data -> 201)\n2. Create Student (Missing Mandatory Data -> 400)\n3. Create Student (Duplicate Email -> 400)\n4. Create Student (Invalid Range / Format -> 400)\n5. Read All Students (List -> 200)\n6. Read All with Search Filter (?search= -> 200)\n7. Read All with Department Filter (?department= -> 200)\n8. Read All with Year Filter (?year= -> 200)\n9. Read Individual Student by ID -> 200\n10. Read Non-existent Student -> 404\n11. Update Student Full (PUT -> 200)\n12. Update Student Partial (PATCH -> 200)\n13. Dashboard Summary Stats -> 200\n14. Delete Student (DELETE -> 200/204)\n15. Delete Non-existent Student -> 404",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000/api/students",
+			"type": "string"
+		},
+		{
+			"key": "created_student_id",
+			"value": "2",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Create Student (Valid Data)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"pm.test(\"Response has success flag true\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"    pm.expect(jsonData.data.name).to.eql(\"Kavya Krishnan\");",
+							"    if (jsonData.data && jsonData.data.id) {",
+							"        pm.collectionVariables.set(\"created_student_id\", jsonData.data.id);",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Kavya Krishnan\",\n    \"email\": \"kavya.krishnan@college.edu\",\n    \"department\": \"Computer Science\",\n    \"year\": 3,\n    \"cgpa\": 9.25\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "2. Create Student (Missing Mandatory Data - Fail Expected)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test(\"Validation errors returned\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(false);",
+							"    pm.expect(jsonData.errors).to.have.property('name');",
+							"    pm.expect(jsonData.errors).to.have.property('email');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"\",\n    \"email\": \"\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "3. Create Student (Duplicate Email - Fail Expected)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test(\"Email uniqueness error caught\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors).to.have.property('email');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Duplicate User\",\n    \"email\": \"kavya.krishnan@college.edu\",\n    \"department\": \"Information Technology\",\n    \"year\": 2,\n    \"cgpa\": 8.10\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "4. Create Student (Invalid CGPA > 10.00 - Fail Expected)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"pm.test(\"CGPA range error caught\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors).to.have.property('cgpa');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Out of Range Student\",\n    \"email\": \"range.test@college.edu\",\n    \"department\": \"Biotechnology\",\n    \"year\": 2,\n    \"cgpa\": 11.50\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "5. Read All Students (GET List)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Returns array of students\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"    pm.expect(jsonData.data).to.be.an('array');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "6. Search Students (?search=query)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Search results returned\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/?search=Aarav",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					],
+					"query": [
+						{
+							"key": "search",
+							"value": "Aarav"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "7. Filter Students by Department (?department=)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/?department=Computer Science",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					],
+					"query": [
+						{
+							"key": "department",
+							"value": "Computer Science"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "8. Filter Students by Year (?year=)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/?year=3",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "3"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "9. Read Single Student by ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Returns correct student object\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"    pm.expect(jsonData.data.id).to.eql(parseInt(pm.collectionVariables.get(\"created_student_id\")));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/{{created_student_id}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"{{created_student_id}}",
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "10. Read Non-Existent Student (404 Expected)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404 Not Found\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"pm.test(\"Response has success flag false\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(false);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/999999/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"999999",
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "11. Update Student Full (PUT)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Student details successfully updated\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"    pm.expect(jsonData.data.cgpa).to.eql(\"9.75\");",
+							"    pm.expect(jsonData.data.year).to.eql(4);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Kavya Krishnan Updated\",\n    \"email\": \"kavya.krishnan@college.edu\",\n    \"department\": \"Computer Science\",\n    \"year\": 4,\n    \"cgpa\": 9.75\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/{{created_student_id}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"{{created_student_id}}",
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "12. Update Student Partial (PATCH)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"CGPA updated via PATCH\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.cgpa).to.eql(\"9.90\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"cgpa\": 9.90\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/{{created_student_id}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"{{created_student_id}}",
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "13. Dashboard Summary Stats",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Stats structure is valid\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('total_students');",
+							"    pm.expect(jsonData.data).to.have.property('average_cgpa');",
+							"    pm.expect(jsonData.data).to.have.property('department_counts');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/stats/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"stats",
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "14. Delete Student (DELETE)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Delete success message returned\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/{{created_student_id}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"{{created_student_id}}",
+						""
+					]
+				}
+			}
+		},
+		{
+			"name": "15. Delete Non-Existent Student (404 Expected)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404 Not Found\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/999999/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"999999",
+						""
+					]
+				}
+			}
+		}
+	]
+}

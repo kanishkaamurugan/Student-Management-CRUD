@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System | CRUD Application</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <!-- Backend Status Banner (Appears if server is offline) -->
+    <div id="connectionBanner" class="connection-banner hidden">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>Backend server is unreachable at <strong id="apiUrlDisplay">http://127.0.0.1:8000</strong>. Please ensure the Django server is running.</span>
+        <button id="retryConnectionBtn" class="btn-banner-retry"><i class="fa-solid fa-rotate"></i> Retry</button>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <h1 class="brand-title">EduManage</h1>
+                    <p class="brand-subtitle">Student Management System • Full-Stack CRUD</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="badge badge-success" id="serverStatusBadge">
+                    <span class="status-dot"></span> Backend Connected
+                </span>
+                <button class="btn btn-primary" id="openAddModalBtn">
+                    <i class="fa-solid fa-user-plus"></i> Add New Student
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+        <!-- Metric Statistics Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon icon-blue">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-label">Total Students</span>
+                    <h3 class="stat-value" id="statTotalStudents">0</h3>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon icon-green">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-label">Average CGPA</span>
+                    <h3 class="stat-value" id="statAvgCgpa">0.00</h3>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon icon-purple">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-label">Active Departments</span>
+                    <h3 class="stat-value" id="statDepts">0</h3>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon icon-amber">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-label">Filtered Results</span>
+                    <h3 class="stat-value" id="statFilteredCount">0</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- Controls: Search, Filter, and View Toggles -->
+        <section class="controls-panel">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="searchInput" placeholder="Search by name, email, or department..." autocomplete="off">
+                <button id="clearSearchBtn" class="clear-search-btn hidden" title="Clear search">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="filter-group">
+                <div class="select-wrapper">
+                    <i class="fa-solid fa-filter select-icon"></i>
+                    <select id="departmentFilter">
+                        <option value="">All Departments</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Electronics & Communication">Electronics & Communication</option>
+                        <option value="Electrical & Electronics">Electrical & Electronics</option>
+                        <option value="Mechanical Engineering">Mechanical Engineering</option>
+                        <option value="Civil Engineering">Civil Engineering</option>
+                        <option value="Biotechnology">Biotechnology</option>
+                        <option value="Data Science & AI">Data Science & AI</option>
+                    </select>
+                </div>
+
+                <div class="select-wrapper">
+                    <i class="fa-solid fa-calendar-days select-icon"></i>
+                    <select id="yearFilter">
+                        <option value="">All Years</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-secondary" id="resetFiltersBtn" title="Reset all filters">
+                    <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+                </button>
+
+                <button class="btn btn-icon" id="refreshBtn" title="Refresh student data">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Student Data Display (Table & Card View) -->
+        <section class="records-container">
+            <div class="records-header">
+                <h2>Student Records</h2>
+                <div class="view-toggles">
+                    <button class="btn-toggle active" id="tableViewBtn" title="Table View">
+                        <i class="fa-solid fa-table-list"></i>
+                    </button>
+                    <button class="btn-toggle" id="cardViewBtn" title="Card View">
+                        <i class="fa-solid fa-grip"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loadingState" class="loading-state hidden">
+                <div class="spinner"></div>
+                <p>Loading students from database...</p>
+            </div>
+
+            <!-- Table View -->
+            <div id="tableWrapper" class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">ID</th>
+                            <th>Student Name</th>
+                            <th>Email Address</th>
+                            <th>Department</th>
+                            <th>Year</th>
+                            <th>CGPA</th>
+                            <th style="width: 140px; text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody">
+                        <!-- Rows rendered dynamically via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Card Grid View (Alternative View) -->
+            <div id="cardGridWrapper" class="card-grid hidden">
+                <!-- Cards rendered dynamically via JavaScript -->
+            </div>
+
+            <!-- Empty State Display -->
+            <div id="emptyState" class="empty-state hidden">
+                <div class="empty-state-icon">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h3 id="emptyStateTitle">No Students Found</h3>
+                <p id="emptyStateText">Get started by creating the first student record or adjusting your filters.</p>
+                <button class="btn btn-primary" id="emptyStateAddBtn">
+                    <i class="fa-solid fa-user-plus"></i> Add Student
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>Student Management System • College CRUD Web Application • Built with Django REST Framework & Vanilla Web Technologies</p>
+    </footer>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Modal 1: Add / Edit Student Form -->
+    <div id="studentModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div>
+                    <h3 id="modalTitle">Add New Student</h3>
+                    <p class="modal-subtitle">Fill in the student details below. All fields marked with * are required.</p>
+                </div>
+                <button class="modal-close-btn" id="closeStudentModalBtn" aria-label="Close dialog">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="studentForm" novalidate>
+                <!-- Hidden field to hold ID during Edit -->
+                <input type="hidden" id="studentId" value="">
+
+                <div class="modal-body">
+                    <!-- General form error banner -->
+                    <div id="formErrorAlert" class="alert alert-error hidden">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="formErrorAlertMsg">Please correct the errors in the form.</span>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div class="form-group">
+                        <label for="studentName">Student Name <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user input-icon"></i>
+                            <input type="text" id="studentName" name="name" placeholder="e.g. Aarav Sharma" required maxlength="100">
+                        </div>
+                        <span class="field-error" id="nameError"></span>
+                    </div>
+
+                    <!-- Email Address -->
+                    <div class="form-group">
+                        <label for="studentEmail">Email Address <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope input-icon"></i>
+                            <input type="email" id="studentEmail" name="email" placeholder="e.g. aarav.sharma@college.edu" required>
+                        </div>
+                        <span class="field-error" id="emailError"></span>
+                    </div>
+
+                    <!-- Department -->
+                    <div class="form-group">
+                        <label for="studentDepartment">Department <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-building-columns input-icon"></i>
+                            <select id="studentDepartment" name="department" required>
+                                <option value="">Select Academic Department</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Information Technology">Information Technology</option>
+                                <option value="Electronics & Communication">Electronics & Communication</option>
+                                <option value="Electrical & Electronics">Electrical & Electronics</option>
+                                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                                <option value="Civil Engineering">Civil Engineering</option>
+                                <option value="Biotechnology">Biotechnology</option>
+                                <option value="Data Science & AI">Data Science & AI</option>
+                            </select>
+                        </div>
+                        <span class="field-error" id="departmentError"></span>
+                    </div>
+
+                    <div class="form-row">
+                        <!-- Academic Year -->
+                        <div class="form-group">
+                            <label for="studentYear">Year of Study <span class="required">*</span></label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-calendar-day input-icon"></i>
+                                <select id="studentYear" name="year" required>
+                                    <option value="">Select Year</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                </select>
+                            </div>
+                            <span class="field-error" id="yearError"></span>
+                        </div>
+
+                        <!-- CGPA -->
+                        <div class="form-group">
+                            <label for="studentCgpa">CGPA (0.00 - 10.00) <span class="required">*</span></label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-star input-icon"></i>
+                                <input type="number" id="studentCgpa" name="cgpa" placeholder="e.g. 8.75" step="0.01" min="0" max="10" required>
+                            </div>
+                            <span class="field-error" id="cgpaError"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelStudentModalBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveStudentBtn">
+                        <span class="btn-spinner hidden"></span>
+                        <span id="saveBtnText"><i class="fa-solid fa-check"></i> Save Student</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: View Student Details -->
+    <div id="viewModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 id="viewModalTitle">Student Profile</h3>
+                <button class="modal-close-btn" id="closeViewModalBtn" aria-label="Close details">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-card">
+                    <div class="profile-avatar" id="viewAvatar">AS</div>
+                    <h3 class="profile-name" id="viewName">-</h3>
+                    <p class="profile-email" id="viewEmail">-</p>
+                </div>
+                <div class="detail-list">
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fa-solid fa-id-card"></i> Student ID</span>
+                        <span class="detail-val" id="viewId">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fa-solid fa-building-columns"></i> Department</span>
+                        <span class="detail-val" id="viewDepartment">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fa-solid fa-calendar"></i> Academic Year</span>
+                        <span class="detail-val" id="viewYear">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fa-solid fa-chart-line"></i> CGPA</span>
+                        <span class="detail-val" id="viewCgpa">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fa-solid fa-clock"></i> Registered At</span>
+                        <span class="detail-val" id="viewCreatedAt">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="closeViewModalFooterBtn">Close</button>
+                <button type="button" class="btn btn-primary" id="editFromViewBtn">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Confirm Delete -->
+    <div id="deleteModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="modal-container modal-sm">
+            <div class="modal-header modal-header-danger">
+                <div>
+                    <h3 id="deleteModalTitle"><i class="fa-solid fa-triangle-exclamation"></i> Confirm Deletion</h3>
+                </div>
+                <button class="modal-close-btn" id="closeDeleteModalBtn" aria-label="Close delete dialog">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to permanently delete student <strong id="deleteStudentName">-</strong> (ID: <span id="deleteStudentId">-</span>)?</p>
+                <p class="text-muted text-sm" style="margin-top: 8px;">This operation cannot be undone and will remove the record permanently from the SQLite database.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <span class="btn-spinner hidden"></span>
+                    <span><i class="fa-solid fa-trash-can"></i> Delete Permanently</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Application JavaScript Logic -->
+    <script src="/js/app.js"></script>
+</body>
+</html>
