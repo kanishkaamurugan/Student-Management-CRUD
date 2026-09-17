@@ -1,6 +1,15 @@
 # Student Management System (Full-Stack CRUD Application)
 
-A complete, beginner-friendly, production-ready full-stack **Student Management System** built to satisfy all requirements of the college project Standard Operating Procedure (SOP).
+A complete, beginner-friendly, deployment-ready full-stack **Student Management System** built to satisfy all requirements of the college project Standard Operating Procedure (SOP).
+
+## 🚀 Live Demo
+
+The deployed Student Management System is available here:
+
+**Live Application:** https://student-management-crud-2-fimc.onrender.com/
+
+You can open the link in a browser to access the deployed application.
+
 
 ---
 
