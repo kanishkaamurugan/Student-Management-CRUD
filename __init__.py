@@ -1,3 +1,0 @@
-"""
-Students application package initialization.
-"""
