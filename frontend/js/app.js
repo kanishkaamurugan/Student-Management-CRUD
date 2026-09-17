@@ -22,7 +22,7 @@ const API_BASE_URL = (() => {
         return `${origin}/api/students/`;
     }
     // Default fallback when running via Live Server or file protocol
-    return 'http://127.0.0.1:8000/api/students/';
+return 'https://student-management-crud-4h56.onrender.com/api/students/';
 })();
 
 const state = {
